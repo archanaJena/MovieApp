@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/png" href="bgclown.jpg" />
+    <title>Cast Details</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background-color: #000;
+        color: white;
+        margin: 0;
+        padding: 20px;
+        text-align: center;
+      }
+
+      .cast-box {
+        display: flex;
+        background: #1a1a1a;
+        border-radius: 10px;
+        border: 1px solid #00e0ff;
+        padding: 20px;
+        margin: 20px auto;
+        width: 60%;
+        box-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
+      }
+
+      .cast-details {
+        flex: 1;
+        text-align: left;
+        padding-right: 20px;
+      }
+
+      .cast-details h2 {
+        margin-bottom: 10px;
+      }
+
+      .cast-photo img {
+        width: 250px;
+        border-radius: 10px;
+      }
+
+      .best-known-container {
+        margin-top: 20px;
+      }
+
+      .best-known-container h3 {
+        margin-bottom: 10px;
+      }
+
+      .movies-list {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 15px;
+      }
+
+      .movie-item img {
+        width: 150px;
+        border-radius: 10px;
+        object-fit: cover;
+        cursor: pointer;
+      }
+
+      .movie-item p {
+        margin-top: 5px;
+        font-size: 0.9rem;
+      }
+
+      .read-more-btn {
+        background: #00e0ff;
+        color: black;
+        border: none;
+        padding: 5px 10px;
+        margin-top: 10px;
+        cursor: pointer;
+        font-size: 0.9rem;
+        border-radius: 5px;
+      }
+
+      .read-more-btn:hover {
+        background: #00e0ff;
+      }
+    </style>
+  </head>
+  <body>
+    <h1 id="cast-name"></h1>
+    <div id="cast-container"></div>
+
+    <div class="best-known-container">
+      <h3>Best Known For</h3>
+      <div class="movies-list" id="movies-list"></div>
+    </div>
+
+    <script>
+      const API_KEY = "aabdf765f82342968810c869cfe3aa27";
+      const BASE_URL = "https://api.themoviedb.org/3";
+      const IMAGE_BASE_URL = "https://image.tmdb.org/t/p/original";
+      const THUMBNAIL_BASE_URL = "https://image.tmdb.org/t/p/w500";
+
+      // Extract castId from URL
+      const urlParams = new URLSearchParams(window.location.search);
+      const castId = urlParams.get("castId");
+
+      if (castId) {
+        fetchCastDetails(castId);
+        fetchBestKnownMovies(castId);
+      }
+
+      async function fetchCastDetails(castId) {
+        const response = await fetch(
+          `${BASE_URL}/person/${castId}?api_key=${API_KEY}`
+        );
+        const cast = await response.json();
+
+        const biography = cast.biography || "No biography available.";
+        const shortBio =
+          biography.length > 200 ? biography.slice(0, 200) + "..." : biography;
+
+        document.getElementById("cast-name").innerText = cast.name;
+        document.getElementById("cast-container").innerHTML = `
+        <div class="cast-box">
+          <div class="cast-details">
+            <h2>${cast.name}</h2>
+            <p><strong>Birthday:</strong> ${cast.birthday || "N/A"}</p>
+            <p id="bio-text">${shortBio}</p>
+            ${
+              biography.length > 200
+                ? `<button id="read-more-btn" class="read-more-btn">More</button>`
+                : ""
+            }
+          </div>
+          <div class="cast-photo">
+            <img src="${
+              cast.profile_path
+                ? IMAGE_BASE_URL + cast.profile_path
+                : "https://via.placeholder.com/250"
+            }" alt="${cast.name}" />
+          </div>
+        </div>
+      `;
+
+        // Add event listener for "Read More" button
+        const readMoreBtn = document.getElementById("read-more-btn");
+        if (readMoreBtn) {
+          readMoreBtn.addEventListener("click", () => {
+            document.getElementById("bio-text").innerText = biography;
+            readMoreBtn.style.display = "none"; // Hide the button after clicking
+          });
+        }
+      }
+
+      async function fetchBestKnownMovies(castId) {
+        const response = await fetch(
+          `${BASE_URL}/person/${castId}/movie_credits?api_key=${API_KEY}`
+        );
+        const data = await response.json();
+        const bestKnownMovies = data.cast
+          .sort((a, b) => b.popularity - a.popularity)
+          .slice(0, 5); // Top 5 movies
+
+        document.getElementById("movies-list").innerHTML = bestKnownMovies
+          .map(
+            (movie) => `
+            <div class="movie-item">
+              <img src="${
+                movie.poster_path
+                  ? THUMBNAIL_BASE_URL + movie.poster_path
+                  : "https://via.placeholder.com/150"
+              }" alt="${movie.title}" />
+              <p>${movie.title}</p>
+            </div>
+          `
+          )
+          .join("");
+      }
+    </script>
+  </body>
+</html>

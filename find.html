@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/png" href="bgclown.jpg" />
+    <title>Movie Search</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background-color: #000;
+        color: white;
+        margin: 0;
+        padding: 0;
+        text-align: center;
+      }
+
+      .search-container {
+        padding: 20px;
+      }
+
+      .search-bar {
+        width: 50%;
+        padding: 10px;
+        border: none;
+        border-radius: 5px;
+        font-size: 1.2rem;
+        text-align: center;
+      }
+
+      .movie-box {
+        display: flex;
+        border: 1px solid #00e0ff;
+        background: #1a1a1a;
+        border-radius: 10px;
+        padding: 20px;
+        margin: 20px auto;
+        width: 60%;
+        box-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
+      }
+
+      .movie-details {
+        flex: 1;
+        text-align: left;
+        padding-right: 20px;
+      }
+
+      .movie-details h2 {
+        margin-bottom: 10px;
+      }
+
+      .movie-poster img {
+        width: 250px;
+        border-radius: 10px;
+      }
+
+      .cast-container {
+        margin-top: 20px;
+      }
+
+      .cast-list {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 15px;
+      }
+
+      .cast-item {
+        text-align: center;
+        cursor: pointer;
+      }
+
+      .cast-item img {
+        width: 100px;
+        height: 100px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 2px solid #00e0ff;
+      }
+
+      .cast-item p {
+        margin-top: 5px;
+        font-size: 0.9rem;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="search-container">
+      <input
+        type="text"
+        class="search-bar"
+        placeholder="Search for a movie..."
+        id="search-bar"
+      />
+    </div>
+
+    <div id="movie-container"></div>
+
+    <div class="cast-container" id="cast-container">
+      <div class="cast-list" id="cast-list"></div>
+    </div>
+
+    <script>
+      const API_KEY = "aabdf765f82342968810c869cfe3aa27";
+      const BASE_URL = "https://api.themoviedb.org/3";
+      const IMAGE_BASE_URL = "https://image.tmdb.org/t/p/original";
+      const THUMBNAIL_BASE_URL = "https://image.tmdb.org/t/p/w500";
+
+      const searchBar = document.getElementById("search-bar");
+      const movieContainer = document.getElementById("movie-container");
+      const castList = document.getElementById("cast-list");
+
+      window.addEventListener("load", () => {
+        if (sessionStorage.getItem("fromCastPage")) {
+          sessionStorage.removeItem("fromCastPage");
+        } else {
+          localStorage.removeItem("movieData");
+          localStorage.removeItem("castData");
+        }
+
+        const storedMovie = localStorage.getItem("movieData");
+        const storedCast = localStorage.getItem("castData");
+
+        if (storedMovie) {
+          const movie = JSON.parse(storedMovie);
+          displayMovieDetails(movie);
+          searchBar.value = movie.title;
+        }
+
+        if (storedCast) {
+          const cast = JSON.parse(storedCast);
+          displayCast(cast);
+        }
+      });
+
+      searchBar.addEventListener("keyup", async (e) => {
+        if (e.key === "Enter" && searchBar.value.trim() !== "") {
+          const query = searchBar.value.trim();
+          const movie = await fetchMovie(query);
+          if (movie) {
+            displayMovieDetails(movie);
+            const cast = await fetchCast(movie.id);
+            displayCast(cast);
+
+            localStorage.setItem("movieData", JSON.stringify(movie));
+            localStorage.setItem("castData", JSON.stringify(cast));
+          }
+        }
+      });
+
+      async function fetchMovie(query) {
+        const response = await fetch(
+          `${BASE_URL}/search/movie?api_key=${API_KEY}&query=${query}`
+        );
+        const data = await response.json();
+        return data.results.length > 0 ? data.results[0] : null;
+      }
+
+      function displayMovieDetails(movie) {
+        movieContainer.innerHTML = `
+          <div class="movie-box">
+            <div class="movie-details">
+              <h2>${movie.title}</h2>
+              <p><strong>Release Date:</strong> ${movie.release_date}</p>
+              <p><strong>Rating:</strong> ${movie.vote_average}</p>
+              <p>${movie.overview}</p>
+            </div>
+            <div class="movie-poster">
+              <img src="${IMAGE_BASE_URL + movie.poster_path}" alt="${
+          movie.title
+        }" />
+            </div>
+          </div>
+        `;
+      }
+
+      async function fetchCast(movieId) {
+        const response = await fetch(
+          `${BASE_URL}/movie/${movieId}/credits?api_key=${API_KEY}`
+        );
+        const data = await response.json();
+        return data.cast.slice(0, 10);
+      }
+
+      function displayCast(cast) {
+        castList.innerHTML = cast
+          .filter((member) => member.profile_path)
+          .map(
+            (member) => `
+        <div class="cast-item" onclick="viewCastDetails(${member.id})">
+          <img src="${THUMBNAIL_BASE_URL + member.profile_path}" alt="${
+              member.name
+            }" />
+          <p>${member.name}</p>
+        </div>
+      `
+          )
+          .join("");
+      }
+
+      function viewCastDetails(castId) {
+        sessionStorage.setItem("fromCastPage", "true");
+        window.location.href = `cast-details.html?castId=${castId}`;
+      }
+    </script>
+  </body>
+</html>
