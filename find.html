@@ -248,6 +248,7 @@
       goBackBtn.addEventListener("click", () => {
         localStorage.removeItem("movieData");
         localStorage.removeItem("castData");
+         goBackBtn.style.display = "none";
         window.location.href = "index.html"; // Navigate back to the homepage
       });
     </script>
