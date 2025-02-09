@@ -82,6 +82,25 @@
         margin-top: 5px;
         font-size: 0.9rem;
       }
+
+      /* Button style for 'Go Back' button */
+      .go-back-btn {
+        padding: 10px 20px;
+        margin-top: 20px;
+        background-color: #00e0ff;
+        color: black;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 1.2rem;
+        display: none; /* Initially hide the button */
+      }
+
+      .go-back-btn:hover {
+        background-color: white;
+        color: black;
+        margin-bottom: 15px;
+      }
     </style>
   </head>
   <body>
@@ -100,6 +119,9 @@
       <div class="cast-list" id="cast-list"></div>
     </div>
 
+    <!-- 'Go Back' Button -->
+    <button class="go-back-btn" id="go-back-btn">Go Back</button>
+
     <script>
       const API_KEY = "aabdf765f82342968810c869cfe3aa27";
       const BASE_URL = "https://api.themoviedb.org/3";
@@ -109,18 +131,21 @@
       const searchBar = document.getElementById("search-bar");
       const movieContainer = document.getElementById("movie-container");
       const castList = document.getElementById("cast-list");
+      const goBackBtn = document.getElementById("go-back-btn");
 
       window.addEventListener("load", () => {
+        // If user navigates back from cast details, show the 'Go Back' button if needed
         if (sessionStorage.getItem("fromCastPage")) {
+          goBackBtn.style.display = "inline-block";
           sessionStorage.removeItem("fromCastPage");
         } else {
           // Remove previously stored movie and cast data
           localStorage.removeItem("movieData");
           localStorage.removeItem("castData");
-          // Optionally, clear the search bar to avoid stale search results
           searchBar.value = "";
           movieContainer.innerHTML = "";
           castList.innerHTML = "";
+          goBackBtn.style.display = "none"; // Hide the button initially
         }
 
         const storedMovie = localStorage.getItem("movieData");
@@ -130,6 +155,7 @@
           const movie = JSON.parse(storedMovie);
           displayMovieDetails(movie);
           searchBar.value = movie.title;
+          goBackBtn.style.display = "inline-block"; // Show the 'Go Back' button if a movie was stored
         }
 
         if (storedCast) {
@@ -150,6 +176,9 @@
             // Store movie and cast data in localStorage
             localStorage.setItem("movieData", JSON.stringify(movie));
             localStorage.setItem("castData", JSON.stringify(cast));
+
+            // Show the 'Go Back' button
+            goBackBtn.style.display = "inline-block";
           }
         }
       });
@@ -213,6 +242,13 @@
         sessionStorage.setItem("fromCastPage", "true");
         window.location.href = `cast-details.html?castId=${castId}`;
       }
+
+      // Go back to homepage and clear localStorage
+      goBackBtn.addEventListener("click", () => {
+        localStorage.removeItem("movieData");
+        localStorage.removeItem("castData");
+        window.location.href = "index.html"; // Navigate back to the homepage
+      });
     </script>
   </body>
 </html>
